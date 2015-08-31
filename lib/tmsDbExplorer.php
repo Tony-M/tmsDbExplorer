@@ -103,7 +103,7 @@ class tmsDbExplorer
             return false;
         }
 
-        $this->msgIfVerbose("\t".$table . ' ... ', false);
+        $this->msgIfVerbose("\t" . $table . ' ... ', false);
 
         try {
             $q = $this->dbh->prepare("SHOW COLUMNS FROM `$table`");
@@ -142,7 +142,7 @@ class tmsDbExplorer
 
         try {
             $data = '<?php' . PHP_EOL;
-            $data .= '$tables = ' . var_export($this->TABLES, true);
+            $data .= '$tables = ' . var_export($this->TABLES, true).';';
             if (false === file_put_contents($this->DB_STRUCTURE_CACHE, $data)) {
                 $this->msgIfVerbose('ERROR. Cann`t write to cache file.');
                 return false;
@@ -160,19 +160,19 @@ class tmsDbExplorer
      */
     public function updateDbScheme()
     {
-        if(false === $this->getTables()){
+        if (false === $this->getTables()) {
             return false;
         }
         $this->msgIfVerbose('Generating table structure:');
 
         foreach ($this->TABLES as $table_name => $table_structure) {
-            if(false === $this->getTableStructure($table_name)){
+            if (false === $this->getTableStructure($table_name)) {
                 return false;
             }
         }
 
         if ($this->FLAG_SAVE_TABLES_CACHE) {
-            if(false === $this->saveTableStructure()){
+            if (false === $this->saveTableStructure()) {
                 return false;
             }
         }
@@ -187,7 +187,7 @@ class tmsDbExplorer
         $this->msgIfVerbose('Generating models:');
 
         foreach ($this->TABLES as $table_name => $structure) {
-            $this->msgIfVerbose("\t".$table_name." base class ... ",false);
+            $this->msgIfVerbose("\t" . $table_name . " base class ... ", false);
 
             $base_data = '<?php ' . PHP_EOL;
 
@@ -209,16 +209,14 @@ class tmsDbExplorer
             $base_data .= '}';
 
 
-            if(false === file_put_contents($this->PATH_TO_MODELS . 'base/' . $this->BASE_MODEL_PREFIX . $table_name . '.php', $base_data)){
+            if (false === file_put_contents($this->PATH_TO_MODELS . 'base/' . $this->BASE_MODEL_PREFIX . $table_name . '.php', $base_data)) {
                 $this->msgIfVerbose('ERROR.');
-            }else{
+            } else {
                 $this->msgIfVerbose('DONE.');
             }
 
 
-
-
-            $this->msgIfVerbose("\t".$table_name." class... ",false);
+            $this->msgIfVerbose("\t" . $table_name . " class... ", false);
 
             $model_file = $this->PATH_TO_MODELS . $table_name . '.php';
 
@@ -226,17 +224,46 @@ class tmsDbExplorer
                 $content = '<?php ' . PHP_EOL;
                 $content .= "class " . $table_name . ' extends ' . $this->BASE_MODEL_PREFIX . $table_name . "{" . PHP_EOL . PHP_EOL . "}";
 
-                if(false===file_put_contents($model_file, $content)){
+                if (false === file_put_contents($model_file, $content)) {
                     $this->msgIfVerbose('ERROR. Cann`t write.');
                     return false;
-                }else{
+                } else {
                     $this->msgIfVerbose('DONE.');
 
                 }
-            }else{
+            } else {
                 $this->msgIfVerbose('Already exists. Unchanged.');
             }
 
+        }
+    }
+
+    /**
+     * read table structure from cache
+     * @return bool
+     */
+    public function  loadDbStructure()
+    {
+        $this->msgIfVerbose('Reading table cache file ... ', false);
+
+        if (!file_exists($this->DB_STRUCTURE_CACHE) || !is_file($this->DB_STRUCTURE_CACHE)) {
+            $this->msgIfVerbose('ERROR. No cached table structure.');
+            return false;
+        }else{
+            try{
+                require_once $this->DB_STRUCTURE_CACHE;
+                if(isset($tables)){
+                    $this->TABLES = $tables;
+                    $this->msgIfVerbose('DONE.');
+                    return true;
+                }else{
+                    $this->msgIfVerbose('ERROR. table structure is empty.');
+                    return false;
+                }
+            }catch (\Exception $e){
+                $this->msgIfVerbose('ERROR. Cann`t read cached structure.');
+                return false;
+            }
         }
     }
 }
