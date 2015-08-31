@@ -1,0 +1,7 @@
+/.idea/*
+/cache/*
+!/cache/.git-mark
+/lib/models/*
+!/lib/models/.git-mark
+/lib/models/base/*
+!/lib/models/base/.git-mark
