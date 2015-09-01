@@ -15,6 +15,6 @@ class tms__base_model {
      * @return bool
      */
     public function isFieldExist($name=null){
-        return isset($this->DATA[$name];
+        return isset($this->DATA[$name]);
     }
 }
