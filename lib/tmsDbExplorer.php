@@ -189,21 +189,39 @@ class tmsDbExplorer
         foreach ($this->TABLES as $table_name => $structure) {
             $this->msgIfVerbose("\t" . $table_name . " base class ... ", false);
 
-            $base_data = '<?php ' . PHP_EOL;
+            $base_data = '<?php ' . PHP_EOL.PHP_EOL;
 
 
-            $fields_init = '';
+            $fields_init = "\tprotected \$DATA = array(".PHP_EOL;
             $methods_init = '';
 
 
             foreach ($structure as $field => $field_info) {
-                $fields_init .= "\tprotected $" . $field . " = NULL;" . PHP_EOL;
+//                $fields_init .= "\tprotected $" . $field . " = NULL;" . PHP_EOL;
+                $fields_init .= "\t\t'" . $field . "' => NULL," . PHP_EOL;
 
-                $methods_init .= "\tpublic function get" . ucfirst($field) . "(){}" . PHP_EOL;
-                $methods_init .= "\tpublic function set" . ucfirst($field) . "(\$value = null){}" . PHP_EOL;
+                $methods_init .= "\t/**".PHP_EOL."\t* get ".$field. ' value '. PHP_EOL;
+                $methods_init .= "\t* @return mixed". PHP_EOL;
+                $methods_init .= "\t*/". PHP_EOL;
+                $methods_init .= "\tpublic function get" . ucfirst($field) . "(){" . PHP_EOL;
+                $methods_init .= "\t\treturn \$this->DATA['".$field."'];" . PHP_EOL;
+                $methods_init .= "\t}" . PHP_EOL. PHP_EOL;
+
+
+                $methods_init .= "\t/**".PHP_EOL."\t* set ".$field. ' value '. PHP_EOL;
+                $methods_init .= "\t* @param mixed \$value". PHP_EOL;
+                $methods_init .= "\t* @return boolean". PHP_EOL;
+                $methods_init .= "\t*/". PHP_EOL;
+                $methods_init .= "\tpublic function set" . ucfirst($field) . "(\$value = null){" . PHP_EOL;
+                $methods_init .= "\t\t\$this->DATA['".$field."']=\$value;".PHP_EOL;
+                $methods_init .= "\t\treturn true;" . PHP_EOL;
+                $methods_init .= "\t}" . PHP_EOL. PHP_EOL;
+
             }
 
-            $base_data .= 'class ' . $this->BASE_MODEL_PREFIX . $table_name . '{' . PHP_EOL;
+            $fields_init .= "\t);".PHP_EOL;
+
+            $base_data .= 'class ' . $this->BASE_MODEL_PREFIX . $table_name . ' extends tms__base_model{' . PHP_EOL;
             $base_data .= $fields_init . PHP_EOL;
             $base_data .= $methods_init . PHP_EOL;
             $base_data .= '}';
