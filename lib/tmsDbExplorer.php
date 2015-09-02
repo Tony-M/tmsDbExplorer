@@ -142,7 +142,7 @@ class tmsDbExplorer
 
         try {
             $data = '<?php' . PHP_EOL;
-            $data .= '$tables = ' . var_export($this->TABLES, true).';';
+            $data .= '$tables = ' . var_export($this->TABLES, true) . ';';
             if (false === file_put_contents($this->DB_STRUCTURE_CACHE, $data)) {
                 $this->msgIfVerbose('ERROR. Cann`t write to cache file.');
                 return false;
@@ -181,18 +181,45 @@ class tmsDbExplorer
 
     /**
      * build models for generated structure
+     * @param Array $models Array(model1, model2....)
      */
-    public function buildModels()
+    public function buildModels($models = array())
     {
         $this->msgIfVerbose('Generating models:');
 
-        foreach ($this->TABLES as $table_name => $structure) {
+        $selected_tables = array();
+
+        if (!is_array($models)) {
+            $this->msgIfVerbose("\tERROR. Wrong models selected. ");
+            return false;
+        }
+
+        if (count($models)) {
+            foreach ($models as $model_name) {
+                if (!isset($this->TABLES[$model_name])) {
+                    $this->msgIfVerbose("\tERROR. selected model " . $model_name . " doesn`t exist");
+                    return false;
+                } else {
+                    $selected_tables[$model_name] = $this->TABLES[$model_name];
+                }
+            }
+        }else{
+            $selected_tables = $this->TABLES;
+        }
+
+        if(!count($selected_tables)){
+            $this->msgIfVerbose("\tERROR. No tables. ");
+            return false;
+        }
+
+
+        foreach ($selected_tables as $table_name => $structure) {
             $this->msgIfVerbose("\t" . $table_name . " base class ... ", false);
 
-            $base_data = '<?php ' . PHP_EOL.PHP_EOL;
+            $base_data = '<?php ' . PHP_EOL . PHP_EOL;
 
 
-            $fields_init = "\tprotected \$DATA = array(".PHP_EOL;
+            $fields_init = "\tprotected \$DATA = array(" . PHP_EOL;
             $methods_init = '';
 
 
@@ -200,26 +227,26 @@ class tmsDbExplorer
 //                $fields_init .= "\tprotected $" . $field . " = NULL;" . PHP_EOL;
                 $fields_init .= "\t\t'" . $field . "' => NULL," . PHP_EOL;
 
-                $methods_init .= "\t/**".PHP_EOL."\t* get ".$field. ' value '. PHP_EOL;
-                $methods_init .= "\t* @return mixed". PHP_EOL;
-                $methods_init .= "\t*/". PHP_EOL;
+                $methods_init .= "\t/**" . PHP_EOL . "\t* get " . $field . ' value ' . PHP_EOL;
+                $methods_init .= "\t* @return mixed" . PHP_EOL;
+                $methods_init .= "\t*/" . PHP_EOL;
                 $methods_init .= "\tpublic function get" . ucfirst($field) . "(){" . PHP_EOL;
-                $methods_init .= "\t\treturn \$this->DATA['".$field."'];" . PHP_EOL;
-                $methods_init .= "\t}" . PHP_EOL. PHP_EOL;
+                $methods_init .= "\t\treturn \$this->DATA['" . $field . "'];" . PHP_EOL;
+                $methods_init .= "\t}" . PHP_EOL . PHP_EOL;
 
 
-                $methods_init .= "\t/**".PHP_EOL."\t* set ".$field. ' value '. PHP_EOL;
-                $methods_init .= "\t* @param mixed \$value". PHP_EOL;
-                $methods_init .= "\t* @return boolean". PHP_EOL;
-                $methods_init .= "\t*/". PHP_EOL;
+                $methods_init .= "\t/**" . PHP_EOL . "\t* set " . $field . ' value ' . PHP_EOL;
+                $methods_init .= "\t* @param mixed \$value" . PHP_EOL;
+                $methods_init .= "\t* @return boolean" . PHP_EOL;
+                $methods_init .= "\t*/" . PHP_EOL;
                 $methods_init .= "\tpublic function set" . ucfirst($field) . "(\$value = null){" . PHP_EOL;
-                $methods_init .= "\t\t\$this->DATA['".$field."']=\$value;".PHP_EOL;
+                $methods_init .= "\t\t\$this->DATA['" . $field . "']=\$value;" . PHP_EOL;
                 $methods_init .= "\t\treturn true;" . PHP_EOL;
-                $methods_init .= "\t}" . PHP_EOL. PHP_EOL;
+                $methods_init .= "\t}" . PHP_EOL . PHP_EOL;
 
             }
 
-            $fields_init .= "\t);".PHP_EOL;
+            $fields_init .= "\t);" . PHP_EOL;
 
             $base_data .= 'class ' . $this->BASE_MODEL_PREFIX . $table_name . ' extends tms__base_model{' . PHP_EOL;
             $base_data .= $fields_init . PHP_EOL;
@@ -267,18 +294,18 @@ class tmsDbExplorer
         if (!file_exists($this->DB_STRUCTURE_CACHE) || !is_file($this->DB_STRUCTURE_CACHE)) {
             $this->msgIfVerbose('ERROR. No cached table structure.');
             return false;
-        }else{
-            try{
+        } else {
+            try {
                 require_once $this->DB_STRUCTURE_CACHE;
-                if(isset($tables)){
+                if (isset($tables)) {
                     $this->TABLES = $tables;
                     $this->msgIfVerbose('DONE.');
                     return true;
-                }else{
+                } else {
                     $this->msgIfVerbose('ERROR. table structure is empty.');
                     return false;
                 }
-            }catch (\Exception $e){
+            } catch (\Exception $e) {
                 $this->msgIfVerbose('ERROR. Cann`t read cached structure.');
                 return false;
             }
